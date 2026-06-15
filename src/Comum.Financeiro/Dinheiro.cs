@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Comum.Financeiro;
 
@@ -40,7 +41,34 @@ public sealed record Dinheiro : IComparable<Dinheiro>
 
     public Dinheiro Multiplicar(decimal quantidade)
     {
-        return new Dinheiro(Valor * quantidade, Moeda);
+        //return new Dinheiro(Valor * quantidade, Moeda);
+        return new Dinheiro(PoliticaArredondamento.Arredondar(Valor * quantidade), Moeda);
+    }
+    
+    public Dinheiro AplicarDesconto(Percentual percentual)
+    {
+        if(percentual.Valor > 100m)
+        {
+            throw new ValorFinanceiroInvalidoException("O percentual de desconto não pode ultrapassar 100%");
+        }
+        
+        var ValorComDesconto = Valor * percentual.ComFatorDeDesconto();
+            
+        if (ValorComDesconto < 0)
+        {
+            throw new ValorFinanceiroInvalidoException("O resultado do desconto não pode ser negativo");
+        }
+        
+        return new Dinheiro(PoliticaArredondamento.Arredondar(ValorComDesconto), Moeda);
+    }
+    
+    public Dinheiro AplicarAcrescimo(Percentual percentual)
+    {
+        ArgumentNullException.ThrowIfNull(percentual);
+        
+        var ValorComAcrescimo = Valor * percentual.ComFatorDeAcrecimo();
+        
+        return new Dinheiro(PoliticaArredondamento.Arredondar(ValorComAcrescimo), Moeda);
     }
 
     public bool EhZero()
